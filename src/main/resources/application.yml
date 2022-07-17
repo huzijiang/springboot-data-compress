@@ -1,0 +1,25 @@
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/javascript,text/css,application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 2KB
+spring:
+  devtools:
+    restart:
+      enabled: true  #设置开启热部署
+      additional-paths: src/main/java #重启目录
+      exclude: WEB-INF/**
+
+  thymeleaf:
+    mode: HTML
+    cache: false
+    check-template: true
+    servlet:
+      content-type: text/html
+    encoding: UTF-8
+    suffix: .html
+    prefix: classpath:/templates/
+
+  mvc:
+    static-path-pattern: /static/**

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>数据压缩</title>
+    <script type="text/javascript" src="../static/pako.min.js"></script>
+    <script type="text/javascript" src="../static/echarts.js"></script>
+    <script type="text/javascript" src="../static/jquery-3.6.0.min.js"></script>
+
+    <script>
+        //解压
+        function unzip(strData) {
+            // Convert binary string to character-number array
+            var charData = strData.split('').map(function (x) {
+                return x.charCodeAt(0);
+            });
+            // Turn number array into byte-array
+            var binData = new Uint8Array(charData);
+            // // unzip
+            var data = pako.inflate(binData);
+            // Convert gunzipped byteArray back to ascii string:
+            return Utf8ArrayToStr(data);
+        }
+
+        //解决数据过大和中文乱码
+        function Utf8ArrayToStr(array) {
+            var out, i, len, c;
+            var char2, char3;
+
+            out = "";
+            len = array.length;
+            i = 0;
+            while (i < len) {
+                c = array[i++];
+                switch (c >> 4) {
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                        // 0xxxxxxx
+                        out += String.fromCharCode(c);
+                        break;
+                    case 12:
+                    case 13:
+                        // 110x xxxx   10xx xxxx
+                        char2 = array[i++];
+                        out += String.fromCharCode(((c & 0x1F) << 6) | (char2 & 0x3F));
+                        break;
+                    case 14:
+                        // 1110 xxxx  10xx xxxx  10xx xxxx
+                        char2 = array[i++];
+                        char3 = array[i++];
+                        out += String.fromCharCode(((c & 0x0F) << 12) |
+                            ((char2 & 0x3F) << 6) |
+                            ((char3 & 0x3F) << 0));
+                        break;
+                }
+            }
+            return out;
+        }
+    </script>
+
+</head>
+<body style="display: block">
+<button id="button1" name="button1" onclick="change_data()">数据变幻</button>
+
+
+<button id="btn">获取超大数据变幻</button>
+
+
+
+<div id="main1" style="width: 1000px; height:600px;"></div>
+
+<div id="main2" style="width: 1000px; height:600px;"></div>
+
+
+
+<script>
+    var myChart1 = echarts.init(document.getElementById('main1'));
+    // thymeleaf 错误解析【【 需要用空行隔开
+    var param1 = [
+        [12, 5], [24, 20], [36, 36], [48, 10], [60, 10], [72, 20]
+    ];
+
+    var param2 = [
+        [12, 12], [24, 12], [36, 12], [48, 12], [60, 12], [72, 12]
+    ];
+
+    option1 = {
+        title: {text: 'Line Chart'},
+        tooltip: {},
+        // 提供一个工具集，可以做数据视图，可以导出图片，可以还原
+        toolbox: {
+            feature: {
+                dataView: {},
+                saveAsImage: {
+                    pixelRatio: 200
+                },
+                restore: {}
+            }
+        },
+        xAxis: {},
+        yAxis: {},
+        series: [{
+            type: 'line',
+            smooth: true,
+            data: param1
+        }]
+    };
+
+    myChart1.setOption(option1);
+
+    //动态数据切换
+    function change_data() {
+        option1.series[0].data = param2;
+        myChart1.setOption(option1);
+    }
+
+</script>
+
+<script>
+    var myChart2 = echarts.init(document.getElementById('main2'));
+
+    var xLabel = [1]
+    var goToSchool = [2]
+    for (var i = 0; i < 51200; i++) {
+        xLabel.push(i);
+        goToSchool.push([i, Math.random() * 10]);
+        if (i % 5 === 0) {
+            goToSchool.push([i, Math.random() * 12]);
+        }
+        if (i % 10 === 0) {
+            goToSchool.push([i, Math.random() * 12]);
+        }
+        if (i == 1561) {
+            goToSchool.push([i, 25.8]);
+        }
+        if (i == 1268) {
+            goToSchool.push([i, 15.4]);
+        }
+    }
+
+
+    option3 = {
+        title: {
+            text: '频谱干扰态势分布',
+            textStyle: {
+                align: 'center',
+                color: '#fff',
+                fontSize: 25,
+            },
+            top: '5%',
+            left: 'center',
+        },
+        backgroundColor: '#0e1c47',
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'transparent',
+            axisPointer: {
+                lineStyle: {
+                    color: {
+                        type: 'linear',
+                        x: 0,
+                        y: 0,
+                        x2: 0,
+                        y2: 1,
+                        colorStops: [{
+                            offset: 0,
+                            color: 'rgba(126,199,255,0)' // 0% 处的颜色
+                        }, {
+                            offset: 0.5,
+                            color: 'rgba(126,199,255,1)' // 100% 处的颜色
+                        }, {
+                            offset: 1,
+                            color: 'rgba(126,199,255,0)' // 100% 处的颜色
+                        }],
+                        global: false // 缺省为 false
+                    }
+                },
+            },
+        },
+        legend: {
+            align: "left",
+            right: '10%',
+            top: '10%',
+            type: 'plain',
+            textStyle: {
+                color: '#7ec7ff',
+                fontSize: 16
+            },
+            // icon:'rect',
+            itemGap: 25,
+            itemWidth: 18,
+            icon: 'path://M0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z',
+
+            data: [
+                {
+                    name: '上学'
+                },
+                {
+                    name: '放学'
+                }
+            ]
+        },
+        grid: {
+            top: '15%',
+            left: '10%',
+            right: '2%',
+            bottom: '55%',
+            // containLabel: true
+        },
+        xAxis: [{
+            name: '频率 / MHz',
+            nameLocation: 'middle',
+            nameTextStyle: {
+                color: "#7ec7ff",
+                fontSize: 20,
+                padding: 50,
+                fontWeight: 'bolder'
+            },
+            type: 'value',
+
+            min: 0,
+            max: 51200,
+
+            maxInterval: 1,
+            axisLabel: { //坐标轴刻度标签的相关设置
+                textStyle: {
+                    color: '#7ec7ff',
+                    padding: 16,
+                    fontSize: 14,
+                    fontWeight: 'bolder'
+                },
+                formatter: function (value) {
+                    if (parseInt(value) % 100 === 0) {
+                        return value
+                    }
+                    //return value
+                }
+            },
+            splitLine: {
+                show: false,
+                lineStyle: {
+                    color: '#192a44'
+                },
+            },
+            axisTick: {
+                show: false,
+            },
+            axisLine: {
+                show: false,
+            },
+            data: xLabel
+        }],
+        yAxis: [{
+            name: 'Hz)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+                color: "#7ec7ff",
+                fontSize: 20,
+                padding: 50,
+                fontWeight: 'bolder'
+            },
+            min: -30,
+            // max:30,
+            splitLine: {
+                show: true,
+                lineStyle: {
+                    color: '#192a44'
+                },
+            },
+            axisLine: {
+                show: true,
+                lineStyle: {
+                    color: "#233653"
+                }
+
+            },
+            axisLabel: {
+                show: true,
+                textStyle: {
+                    color: '#7ec7ff',
+                    padding: 16,
+                    fontSize: 14,
+                    fontWeight: 'bolder'
+                },
+                formatter: function (value) {
+                    if (value === 0) {
+                        return value
+                    }
+                    return value
+                }
+            },
+            axisTick: {
+                show: false,
+            },
+        }],
+        series: [{
+            name: '',
+            type: 'line',
+            symbol: 'none', // 默认是空心圆（中间是白色的），改成实心圆
+            showAllSymbol: false,
+            symbolSize: 0,
+            smooth: false,
+            lineStyle: {
+                normal: {
+                    width: 1,
+                    color: "rgba(25,163,223,1)", // 线条颜色
+                },
+                borderColor: 'rgba(0,0,0,.4)',
+            },
+            itemStyle: {
+                color: "rgba(25,163,223,1)",
+                borderColor: "#646ace",
+                borderWidth: 2
+
+            },
+            tooltip: {
+                show: true
+            },
+
+            data: goToSchool
+        }]
+    };
+
+    myChart2.setOption(option3);
+
+    $("#btn").click(function () {
+        $.ajax({
+            url:"/getBigData",
+            type:"GET",
+            success:function(result){
+                //解压缩
+               // var output= unzip(result);
+
+                change_big_data(result);
+            }
+        });
+    });
+
+
+
+    //动态数据切换
+    function change_big_data(big_data) {
+        var jsonres= JSON.parse(big_data)
+
+        var goToSchool2 = [2];
+        for (var i = 0; i < 51200; i++) {
+            goToSchool2.push([i, jsonres[i].y]);
+        }
+
+        option3.series[0].data=goToSchool2;
+
+        myChart2.setOption(option3);
+
+    }
+
+</script>
+<script>
+
+</script>
+</body>
+
+</html>
